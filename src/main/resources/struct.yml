@@ -1,0 +1,19 @@
+---
+sidx:
+  tableName: test
+  tableConfig:
+    dataTableBlockEncoding: PREFIX
+    dataTableCompression: BZIP2
+    dataTableBlockSize: 65535
+    dataTableRegions: 3
+    indexTableBlockEncoding: FAST_DIFF
+    indexTableCompression: LZ4
+    indexTableBlockSize: 65535
+    indexTableRegions: 1
+  tableColumns:
+    - index: true
+      qualifier: c1
+      family: f1
+    - index: false
+      qualifier: c1
+      family: f2

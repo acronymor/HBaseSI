@@ -1,4 +1,4 @@
-package com.hbase.demo.connection;
+package com.hbase.demo.client;
 
 import com.hbase.demo.configuration.HbaseConfig;
 import org.apache.hadoop.conf.Configuration;

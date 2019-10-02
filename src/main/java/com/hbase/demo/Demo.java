@@ -1,13 +1,15 @@
 package com.hbase.demo;
 
-import com.hbase.demo.connection.SidxConnection;
-import org.apache.hadoop.hbase.TableName;
-import org.apache.hadoop.hbase.client.Connection;
+import com.hbase.demo.client.SidxOperation;
+import com.hbase.demo.client.SidxPut;
+import com.hbase.demo.client.SidxTable;
+import com.hbase.demo.configuration.SidxTableConfig;
+import org.apache.hadoop.hbase.util.Bytes;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
-import java.util.Arrays;
+import java.util.UUID;
 
 /**
  * @author apktool
@@ -20,11 +22,43 @@ import java.util.Arrays;
 public class Demo {
 
     @Autowired
-    private SidxConnection sidxConnection;
+    private SidxOperation sidxOperation;
 
+
+    @Autowired
+    private SidxTableConfig sidxTableConfig;
+
+    /**
+     * @param args
+     * @throws IOException
+     */
     public void start(String[] args) throws IOException {
-        Connection conn = sidxConnection.getHbaseConnection();
-        TableName[] tables = conn.getAdmin().listTableNames();
-        Arrays.asList(tables).stream().forEach(t -> System.out.println(t.getNameAsString()));
+        boolean flag = sidxOperation.createTable();
+        System.out.println(flag);
+
+        /*
+        SidxTable table = new SidxTable().of(sidxTableConfig.getTableName());
+
+        for (int i = 0; i < 10; i++) {
+            String rowKey = String.format("row%02d", i);
+
+            SidxPut data = new SidxPut().of(Bytes.toBytes(rowKey));
+
+            sidxTableConfig.getTableColumns().forEach(t -> {
+                data.addColumnFamily(Bytes.toBytes(t.getFamily()))
+                    .addQualifier(Bytes.toBytes(t.getQualifier()))
+                    .addValue(Bytes.toBytes(UUID.randomUUID().toString()))
+                    .addTs(System.currentTimeMillis())
+                    .buildCell();
+            });
+
+            data.build();
+
+            sidxOperation.put(table, data);
+
+        }
+
+         */
+
     }
 }
