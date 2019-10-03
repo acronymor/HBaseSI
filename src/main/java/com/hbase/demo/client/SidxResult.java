@@ -4,6 +4,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.apache.hadoop.hbase.client.Result;
 
+import java.util.Iterator;
+
 /**
  * @author apktool
  * @title: com.hbase.demo.client.SidxResult
@@ -15,8 +17,16 @@ public class SidxResult {
     @Getter
     private Result result;
 
+    @Getter
+    private Iterator<Result> iterator;
+
     public SidxResult of(Result result) {
         this.result = result;
+        return this;
+    }
+
+    public SidxResult of(Iterator<Result> iterator) {
+        this.iterator = iterator;
         return this;
     }
 

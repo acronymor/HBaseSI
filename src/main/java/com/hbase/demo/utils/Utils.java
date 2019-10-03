@@ -1,5 +1,6 @@
 package com.hbase.demo.utils;
 
+import com.hbase.demo.client.SidxTable;
 import com.hbase.demo.configuration.SidxTableConfig;
 
 import java.io.ByteArrayOutputStream;
@@ -47,6 +48,18 @@ public class Utils {
         sb.append(Constants.INDEX_TABLE_NAME_SEPARATOR);
         sb.append(Constants.INDEX_TABLE_SUFFIX);
         return sb.toString();
+    }
+
+    /**
+     * @param sidxTable
+     * @param columnFamily
+     * @param qualifier
+     * @return String
+     * @description IndexTableName = DataTableName_DataTableColumnFamily_DataTableColumn_IndexTableSUFFIX
+     */
+    public static String deduceIndexTableName(SidxTable sidxTable, String columnFamily, String qualifier) {
+        String dataTableName = sidxTable.getTableName().getNameAsString();
+        return deduceIndexTableName(dataTableName, columnFamily, qualifier);
     }
 
 

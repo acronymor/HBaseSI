@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -115,6 +116,20 @@ public class HbaseOperator {
         }
 
         return new SidxResult().build();
+    }
+
+    public SidxResult scan(SidxTable sidxTable, SidxScan sidxScan) {
+        Connection conn = sidxConnection.getHbaseConnection();
+
+        try (Table table = conn.getTable(sidxTable.getTableName())) {
+            Iterator<Result> iterator = table.getScanner(sidxScan.getScan()).iterator();
+            return new SidxResult().of(iterator);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return new SidxResult().build();
+
     }
 
     public void close() {

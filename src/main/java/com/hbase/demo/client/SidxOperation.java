@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hbase.demo.configuration.SidxTableConfig;
 import com.hbase.demo.utils.Constants;
 import com.hbase.demo.utils.Utils;
+import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,10 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  * @author apktool
@@ -228,8 +226,75 @@ public class SidxOperation {
         return meta;
     }
 
+    /**
+     * @param sidxTable
+     * @param sidxGet
+     * @return SidxResult
+     * @description: get data from table
+     */
     public SidxResult get(SidxTable sidxTable, SidxGet sidxGet) {
         SidxResult result = operator.get(sidxTable, sidxGet);
         return result;
+    }
+
+    /**
+     * @param sidxTable
+     * @param family
+     * @param qualifier
+     * @param value
+     * @return SidxResult
+     * @description: get data from index table and data table
+     */
+    public Iterator<SidxResult> get(SidxTable sidxTable, byte[] family, byte[] qualifier, byte[] value) {
+        SidxTableConfig meta = achieveMeta(sidxTable);
+
+        List<String> indexTableNames = Utils.deduceIndexTableNames(meta);
+        String indexTableName = Utils.deduceIndexTableName(sidxTable, Bytes.toString(family), Bytes.toString(qualifier));
+
+        if (!indexTableNames.contains(indexTableName)) {
+            /* The data can't be find from any index table */
+            SidxScan sidxScan = new SidxScan().of().addColumnFamily(family).addQualifier(qualifier)
+                .setValueFilter(SidxScan.SidxCompareOperator.EQUAL, Bytes.toString(value))
+                .setColumnCountGetFilter(10)
+                .setPageFilter(10L)
+                .buildFilter()
+                .build();
+            SidxResult dataTableResult = operator.scan(sidxTable, sidxScan);
+
+            Iterator<Result> iterator = dataTableResult.getIterator();
+            List<SidxResult> results = new LinkedList<>();
+
+            iterator.forEachRemaining(result -> {
+                SidxResult data = new SidxResult().of(result);
+                results.add(data);
+            });
+
+            return results.iterator();
+        } else {
+            /* The data can be found from given index table */
+            // 根据条件遍历索引表
+            SidxScan sidxScan = new SidxScan().of()
+                .setKeyOnlyFilter()
+                .setRowlFilter(SidxScan.SidxCompareOperator.EQUAL, Bytes.toString(value))
+                .buildFilter()
+                .build();
+
+            SidxTable indexTable = new SidxTable().of(indexTableName).build();
+            SidxResult indexTableResult = operator.scan(indexTable, sidxScan);
+
+            Iterator<Result> iterator = indexTableResult.getIterator();
+            List<SidxResult> results = new LinkedList<>();
+
+            iterator.forEachRemaining(result -> {
+                // 根据索引表拿到的RowKey反查数据表
+                String[] indexRow = Bytes.toString(result.getRow()).split(Constants.INDEX_TABLE_NAME_SEPARATOR);
+                String dataRow = indexRow[indexRow.length - 1];
+                SidxGet dataGet = new SidxGet().of(Bytes.toBytes(dataRow)).build();
+                SidxResult data = get(sidxTable, dataGet);
+                results.add(data);
+            });
+
+            return results.iterator();
+        }
     }
 }
