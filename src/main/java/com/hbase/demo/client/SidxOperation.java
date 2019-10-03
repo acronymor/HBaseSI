@@ -11,6 +11,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -164,6 +166,8 @@ public class SidxOperation {
     public boolean put(SidxTable sidxTable, SidxPut dataPut) {
         operator.put(sidxTable, dataPut);
 
+        SidxTableConfig tableConfig = achieveMeta(sidxTable);
+
         tableConfig.getTableColumns().stream().filter(t -> t.isIndex()).forEach(t -> {
 
             byte[] column = dataPut.getPut().get(Bytes.toBytes(t.getFamily()), Bytes.toBytes(t.getQualifier())).get(0).getValueArray();
@@ -183,5 +187,49 @@ public class SidxOperation {
         });
 
         return true;
+    }
+
+    /**
+     * @param table
+     * @return SidxTableConfig
+     * @description: get meta from sidx.meta.table
+     */
+    public SidxTableConfig achieveMeta(SidxTable table) {
+        SidxTable metaTable = new SidxTable().of(Constants.META_TABLE_NAME)
+            .addColumnFamily(Constants.META_TABLE_COLUMN_FAMILY)
+            .buildCF()
+            .build();
+
+        SidxGet get = new SidxGet()
+            .of(table.getTableName().getName())
+            .build();
+
+        SidxResult result = get(metaTable, get);
+
+        List<SidxTableConfig.TableColumn> columns = new ArrayList<>();
+        SidxTableConfig.TableConfig config = new SidxTableConfig.TableConfig();
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+
+            byte[] configsValue = result.getResult().getValue(Bytes.toBytes(Constants.META_TABLE_COLUMN_FAMILY), Bytes.toBytes(Constants.META_TABLE_COLUMN_QUALIFIER_TABLE_CONFIG));
+            config = mapper.readValue(configsValue, SidxTableConfig.TableConfig.class);
+
+            byte[] columnsValue = result.getResult().getValue(Bytes.toBytes(Constants.META_TABLE_COLUMN_FAMILY), Bytes.toBytes(Constants.META_TABLE_COLUMN_QUALIFIER_TABLE_COLUMNS));
+            columns = mapper.readValue(columnsValue, mapper.getTypeFactory().constructCollectionType(List.class, SidxTableConfig.TableColumn.class));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        SidxTableConfig meta = new SidxTableConfig();
+        meta.setTableName(table.getTableName().getNameAsString());
+        meta.setTableConfig(config);
+        meta.setTableColumns(columns);
+
+        return meta;
+    }
+
+    public SidxResult get(SidxTable sidxTable, SidxGet sidxGet) {
+        SidxResult result = operator.get(sidxTable, sidxGet);
+        return result;
     }
 }

@@ -37,6 +37,18 @@ public class Demo {
         System.out.println(flag);
 
         /*
+        String tableName = "test";
+        String rowKey = "row01";
+        String columnFamily = "f1";
+        String qualifier = "c1";
+
+        SidxTable table = new SidxTable().of(tableName).build();
+        SidxGet get = new SidxGet().of(Bytes.toBytes(rowKey)).build();
+        SidxResult result = sidxOperation.get(table, get);
+
+        byte[] value = result.getResult().getValue(Bytes.toBytes(columnFamily), Bytes.toBytes(qualifier));
+        System.out.println(new String(value));
+
         SidxTable table = new SidxTable().of(sidxTableConfig.getTableName());
 
         for (int i = 0; i < 10; i++) {
@@ -57,8 +69,6 @@ public class Demo {
             sidxOperation.put(table, data);
 
         }
-
          */
-
     }
 }

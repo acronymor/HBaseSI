@@ -104,6 +104,19 @@ public class HbaseOperator {
         return false;
     }
 
+    public SidxResult get(SidxTable sidxTable, SidxGet sidxGet) {
+        Connection conn = sidxConnection.getHbaseConnection();
+
+        try (Table table = conn.getTable(sidxTable.getTableName())) {
+            SidxResult sidxResult = new SidxResult().of(table.get(sidxGet.getGet())).build();
+            return sidxResult;
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return new SidxResult().build();
+    }
+
     public void close() {
         Connection conn = sidxConnection.getHbaseConnection();
         try {
