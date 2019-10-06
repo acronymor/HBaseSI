@@ -1,5 +1,6 @@
 package com.hbase.demo.client;
 
+import com.hbase.demo.condition.SidxOperator;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -45,30 +46,30 @@ public class SidxScan {
         return this;
     }
 
-    public SidxScan setRowFilter(SidxOperatorNode.SidxCompareOperatorKind sidxCompareOperator, byte[] row) {
-        CompareOperator compareOperator = convert(sidxCompareOperator);
+    public SidxScan setRowFilter(SidxOperator.SidxKind kind, byte[] row) {
+        CompareOperator compareOperator = convert(kind);
         Filter filter = new RowFilter(compareOperator, new SubstringComparator(Bytes.toString(row)));
         filters.addFilter(filter);
         return this;
     }
 
-    public SidxScan setValueFilter(SidxOperatorNode.SidxCompareOperatorKind sidxCompareOperator, byte[] value) {
+    public SidxScan setValueFilter(SidxOperator.SidxKind sidxCompareOperator, byte[] value) {
         CompareOperator compareOperator = convert(sidxCompareOperator);
         Filter filter = new ValueFilter(compareOperator, new BinaryComparator(value));
         filters.addFilter(filter);
         return this;
     }
 
-    public SidxScan setSingleColumnValueFilter(SidxOperatorNode.SidxCompareOperatorKind sidxCompareOperator, byte[] value) {
-        CompareOperator compareOperator = convert(sidxCompareOperator);
+    public SidxScan setSingleColumnValueFilter(SidxOperator.SidxKind kind, byte[] value) {
+        CompareOperator compareOperator = convert(kind);
         SingleColumnValueFilter filter = new SingleColumnValueFilter(columnFamily, qualifier, compareOperator, value);
         filter.setFilterIfMissing(true);
         filters.addFilter(filter);
         return this;
     }
 
-    public SidxScan setSingleColumnValueExcludeFilter(SidxOperatorNode.SidxCompareOperatorKind sidxCompareOperator, byte[] value) {
-        CompareOperator compareOperator = convert(sidxCompareOperator);
+    public SidxScan setSingleColumnValueExcludeFilter(SidxOperator.SidxKind kind, byte[] value) {
+        CompareOperator compareOperator = convert(kind);
         Filter filter = new SingleColumnValueExcludeFilter(columnFamily, qualifier, compareOperator, value);
         filters.addFilter(filter);
         return this;
@@ -118,7 +119,7 @@ public class SidxScan {
         return this;
     }
 
-    private CompareOperator convert(SidxOperatorNode.SidxCompareOperatorKind compareOperator) {
+    private CompareOperator convert(SidxOperator.SidxKind compareOperator) {
         switch (compareOperator) {
             case EQUAL:
                 return CompareOperator.EQUAL;

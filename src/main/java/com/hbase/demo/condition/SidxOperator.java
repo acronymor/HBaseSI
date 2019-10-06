@@ -1,30 +1,22 @@
-package com.hbase.demo.client;
+package com.hbase.demo.condition;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 /**
  * @author apktool
- * @title: com.hbase.demo.client.SidxOperatorNode
+ * @title: com.hbase.demo.condition.SidxOperator
  * @description: TODO
- * @date 2019-10-06 11:59
+ * @date 2019-10-06 21:08
  */
 @Getter
 @AllArgsConstructor
-public class SidxOperatorNode {
+public class SidxOperator {
+    private String name;
 
-    private SidxCompareOperatorKind kind;
+    private SidxKind kind;
 
-    private byte[] familyIdentifier;
-
-    private byte[] columnIdentifier;
-
-    private byte[] literal;
-
-    /**
-     * Wrapper of CompareOperator
-     */
-    public enum SidxCompareOperatorKind {
+    public enum SidxKind {
         /*
          * EQUAL             |   ==
          * GREATER           |   >
@@ -40,6 +32,9 @@ public class SidxOperatorNode {
         LESS,
         LESS_OR_EQUAL,
         NOT_EQUAL,
-        NO_OP;
+        NO_OP,
+
+        AND,
+        OR;
     }
 }

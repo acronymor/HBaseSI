@@ -2,6 +2,7 @@ package com.hbase.demo.client;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hbase.demo.condition.*;
 import com.hbase.demo.configuration.SidxTableConfig;
 import com.hbase.demo.utils.Constants;
 import com.hbase.demo.utils.Utils;
@@ -260,12 +261,16 @@ public class SidxOperation {
      * @return SidxResult
      * @description: get data from index table and data table
      */
-    public SidxResult get(SidxTable sidxTable, SidxOperatorNode node) {
+    public SidxResult get(SidxTable sidxTable, SidxCall node) {
+        AbstractSidxNode[] operators = node.getOperators();
 
-        SidxOperatorNode.SidxCompareOperatorKind kind = node.getKind();
-        byte[] family = node.getFamilyIdentifier();
-        byte[] qualifier = node.getColumnIdentifier();
-        byte[] value = node.getLiteral();
+        SidxIdentifier identifier = (SidxIdentifier) operators[0];
+        SidxLiteral literal = (SidxLiteral) operators[1];
+        SidxOperator.SidxKind kind = node.getOperator().getKind();
+
+        byte[] family = identifier.getFamilyIdentifier();
+        byte[] qualifier = identifier.getColumnIdentifier();
+        byte[] value = literal.getLiteral();
 
         SidxTableConfig meta = achieveMeta(sidxTable);
 
@@ -273,7 +278,6 @@ public class SidxOperation {
         String indexTableName = Utils.deduceIndexTableName(sidxTable, Bytes.toString(family), Bytes.toString(qualifier));
 
         if (!indexTableNames.contains(indexTableName)) {
-            /* The data can't be find from any index table */
             SidxScan sidxScan = new SidxScan().of()
                 .addColumnFamily(family)
                 .addQualifier(qualifier)
@@ -295,7 +299,6 @@ public class SidxOperation {
             // 根据数据表拿到的RowKey反查数据表，获取整行数据
             return get(sidxTable, list);
         } else {
-            /* The data can be found from given index table */
             SidxScan sidxScan = new SidxScan().of()
                 .setKeyOnlyFilter()
                 .setRowFilter(kind, value)
