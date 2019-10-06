@@ -29,8 +29,8 @@ public class Demo {
      * @throws IOException
      */
     public void start(String[] args) throws IOException {
-        // createTableDemo.start(args);
-        // putDemo.start(args);
+        createTableDemo.start(args);
+        putDemo.start(args);
         getDemo.start(args);
     }
 }

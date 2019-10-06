@@ -25,11 +25,11 @@ public class GetDemo {
 
     public void start(String[] args) {
         SidxTable table = new SidxTable().of("test");
-        String value = "a61c5142-b069-4898-a332-7cfb501c91d6";
+        Long value = 4L;
 
         SidxOperatorNode node = new SidxOperatorNode(
-            SidxOperatorNode.SidxCompareOperatorKind.GREATER_OR_EQUAL,
-            Bytes.toBytes("f1"),
+            SidxOperatorNode.SidxCompareOperatorKind.EQUAL,
+            Bytes.toBytes("f2"),
             Bytes.toBytes("c1"),
             Bytes.toBytes(value)
         );
@@ -37,8 +37,9 @@ public class GetDemo {
         Iterator<SidxResult> iterator = sidxOperation.get(table, node);
         while (iterator.hasNext()) {
             Result result = iterator.next().getResult();
-            byte[] data = result.getValue(Bytes.toBytes("f2"), Bytes.toBytes("c1"));
-            System.out.println(Bytes.toString(data));
+            System.out.println(new String(result.getRow()));
+            byte[] data = result.getValue(Bytes.toBytes("f1"), Bytes.toBytes("c1"));
+            System.out.println(Bytes.toInt(data));
         }
     }
 }

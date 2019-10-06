@@ -14,6 +14,8 @@ sidx:
     - index: true
       qualifier: c1
       family: f1
+      type: INTEGER
     - index: false
       qualifier: c1
       family: f2
+      type: LONG

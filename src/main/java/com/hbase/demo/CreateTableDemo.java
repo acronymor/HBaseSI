@@ -23,6 +23,5 @@ public class CreateTableDemo {
      */
     public void start(String[] args) throws IOException {
         boolean flag = sidxOperation.createTable();
-        System.out.println(flag);
     }
 }

@@ -8,6 +8,8 @@ import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.filter.*;
 import org.apache.hadoop.hbase.util.Bytes;
 
+import java.util.List;
+
 /**
  * @author apktool
  * @title: com.hbase.demo.client.SidxScan
@@ -24,6 +26,8 @@ public class SidxScan {
 
     private byte[] columnFamily = new byte[0];
 
+    private byte[] qualifier = new byte[0];
+
     public SidxScan of() {
         scan = new Scan();
         return this;
@@ -36,20 +40,36 @@ public class SidxScan {
     }
 
     public SidxScan addQualifier(byte[] qualifier) {
+        this.qualifier = qualifier;
         scan.addColumn(columnFamily, qualifier);
         return this;
     }
 
-    public SidxScan setRowlFilter(SidxOperatorNode.SidxCompareOperatorKind sidxCompareOperator, String value) {
+    public SidxScan setRowFilter(SidxOperatorNode.SidxCompareOperatorKind sidxCompareOperator, byte[] row) {
         CompareOperator compareOperator = convert(sidxCompareOperator);
-        Filter filter = new RowFilter(compareOperator, new SubstringComparator(value));
+        Filter filter = new RowFilter(compareOperator, new SubstringComparator(Bytes.toString(row)));
         filters.addFilter(filter);
         return this;
     }
 
-    public SidxScan setValueFilter(SidxOperatorNode.SidxCompareOperatorKind sidxCompareOperator, String value) {
+    public SidxScan setValueFilter(SidxOperatorNode.SidxCompareOperatorKind sidxCompareOperator, byte[] value) {
         CompareOperator compareOperator = convert(sidxCompareOperator);
-        Filter filter = new ValueFilter(compareOperator, new SubstringComparator(value));
+        Filter filter = new ValueFilter(compareOperator, new BinaryComparator(value));
+        filters.addFilter(filter);
+        return this;
+    }
+
+    public SidxScan setSingleColumnValueFilter(SidxOperatorNode.SidxCompareOperatorKind sidxCompareOperator, byte[] value) {
+        CompareOperator compareOperator = convert(sidxCompareOperator);
+        SingleColumnValueFilter filter = new SingleColumnValueFilter(columnFamily, qualifier, compareOperator, value);
+        filter.setFilterIfMissing(true);
+        filters.addFilter(filter);
+        return this;
+    }
+
+    public SidxScan setSingleColumnValueExcludeFilter(SidxOperatorNode.SidxCompareOperatorKind sidxCompareOperator, byte[] value) {
+        CompareOperator compareOperator = convert(sidxCompareOperator);
+        Filter filter = new SingleColumnValueExcludeFilter(columnFamily, qualifier, compareOperator, value);
         filters.addFilter(filter);
         return this;
     }
@@ -74,6 +94,17 @@ public class SidxScan {
 
     public SidxScan setPrefixFilter(String prefix) {
         Filter filter = new PrefixFilter(Bytes.toBytes(prefix));
+        filters.addFilter(filter);
+        return this;
+    }
+
+    public SidxScan setMultipleColumnPrefixFilter(List<String> prefix) {
+        byte[][] prefixes = new byte[prefix.size()][];
+        for (int i = 0; i < prefix.size(); i++) {
+            prefixes[i] = Bytes.toBytes(prefix.get(i));
+        }
+
+        Filter filter = new MultipleColumnPrefixFilter(prefixes);
         filters.addFilter(filter);
         return this;
     }

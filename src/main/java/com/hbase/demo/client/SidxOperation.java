@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hbase.demo.configuration.SidxTableConfig;
 import com.hbase.demo.utils.Constants;
 import com.hbase.demo.utils.Utils;
+import org.apache.hadoop.hbase.Cell;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.slf4j.Logger;
@@ -168,7 +169,12 @@ public class SidxOperation {
 
         tableConfig.getTableColumns().stream().filter(t -> t.isIndex()).forEach(t -> {
 
-            byte[] column = dataPut.getPut().get(Bytes.toBytes(t.getFamily()), Bytes.toBytes(t.getQualifier())).get(0).getValueArray();
+            List<Cell> list = dataPut.getPut().get(Bytes.toBytes(t.getFamily()), Bytes.toBytes(t.getQualifier()));
+            Cell item = list.get(0);
+
+            int offset = item.getValueOffset();
+            int len = item.getValueLength();
+            byte[] column = Arrays.copyOfRange(item.getRowArray(), offset, offset + len);
             byte[] indexRowKey = Utils.deduceIndexRowkey(dataPut.getPut().getRow(), column, tableConfig.getTableConfig().getIndexTableRegions());
 
             SidxPut indexPut = new SidxPut().of(indexRowKey)
@@ -257,8 +263,10 @@ public class SidxOperation {
 
         if (!indexTableNames.contains(indexTableName)) {
             /* The data can't be find from any index table */
-            SidxScan sidxScan = new SidxScan().of().addColumnFamily(family).addQualifier(qualifier)
-                .setValueFilter(kind, Bytes.toString(value))
+            SidxScan sidxScan = new SidxScan().of()
+                .addColumnFamily(family)
+                .addQualifier(qualifier)
+                .setSingleColumnValueFilter(kind, value)
                 .setColumnCountGetFilter(10)
                 .setPageFilter(10L)
                 .buildFilter()
@@ -269,17 +277,19 @@ public class SidxOperation {
             List<SidxResult> results = new LinkedList<>();
 
             iterator.forEachRemaining(result -> {
-                SidxResult data = new SidxResult().of(result);
+                // 根据数据表拿到的RowKey反查数据表，获取整行数据
+                byte[] dataRow = result.getRow();
+                SidxGet dataGet = new SidxGet().of(dataRow).build();
+                SidxResult data = get(sidxTable, dataGet);
                 results.add(data);
             });
 
             return results.iterator();
         } else {
             /* The data can be found from given index table */
-            // 根据条件遍历索引表
             SidxScan sidxScan = new SidxScan().of()
                 .setKeyOnlyFilter()
-                .setRowlFilter(kind, Bytes.toString(value))
+                .setRowFilter(kind, value)
                 .buildFilter()
                 .build();
 

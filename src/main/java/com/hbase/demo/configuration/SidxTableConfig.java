@@ -1,6 +1,8 @@
 package com.hbase.demo.configuration;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.env.YamlPropertySourceLoader;
@@ -29,7 +31,6 @@ import java.util.List;
 @NoArgsConstructor
 @Data
 public class SidxTableConfig {
-
     /**
      * tableName : test
      * tableConfig : {"dataTableBlockSize":0,"dataTableBlockEncoding":"FAST_DIFF","dataTableCompression":"LZ4","dataTableRegions":32,"indexTableRegions":3}
@@ -39,6 +40,30 @@ public class SidxTableConfig {
     private String tableName;
     private TableConfig tableConfig;
     private List<TableColumn> tableColumns;
+
+    /**
+     * Qualifier Type
+     *
+     * @description: These byte array are not equal for the same value from different type
+     */
+    @AllArgsConstructor
+    public enum QualifierType {
+        /**
+         * Wrapper of Java Type
+         */
+
+        BYTE("java.lang.Byte"),
+        SHORT("java.lang.Short"),
+        INTEGER("java.lang.Integer"),
+        LONG("java.lang.Long"),
+        FLOAT("java.lang.Float"),
+        DOUBLE("java.lang.Double"),
+        BOOLEAN("java.lang.Boolean"),
+        STRING("java.lang.String");
+
+        @Getter
+        private String typeClassName;
+    }
 
     @NoArgsConstructor
     @Data
@@ -68,11 +93,13 @@ public class SidxTableConfig {
          * index : true
          * qualifier : c1
          * family : f
+         * type: Integer
          */
 
         private boolean index;
         private String qualifier;
         private String family;
+        private QualifierType type;
     }
 
     static class YamlPropertyLoaderFactory extends DefaultPropertySourceFactory {
