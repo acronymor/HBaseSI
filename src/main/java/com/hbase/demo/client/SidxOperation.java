@@ -245,11 +245,22 @@ public class SidxOperation {
 
     /**
      * @param sidxTable
+     * @param sidxGets
+     * @return SidxResult
+     * @description: get any data from table
+     */
+    public SidxResult get(SidxTable sidxTable, List<SidxGet> sidxGets) {
+        SidxResult result = operator.get(sidxTable, sidxGets);
+        return result;
+    }
+
+    /**
+     * @param sidxTable
      * @param node
      * @return SidxResult
      * @description: get data from index table and data table
      */
-    public Iterator<SidxResult> get(SidxTable sidxTable, SidxOperatorNode node) {
+    public SidxResult get(SidxTable sidxTable, SidxOperatorNode node) {
 
         SidxOperatorNode.SidxCompareOperatorKind kind = node.getKind();
         byte[] family = node.getFamilyIdentifier();
@@ -272,19 +283,17 @@ public class SidxOperation {
                 .buildFilter()
                 .build();
             SidxResult dataTableResult = operator.scan(sidxTable, sidxScan);
-
             Iterator<Result> iterator = dataTableResult.getIterator();
-            List<SidxResult> results = new LinkedList<>();
 
+            List<SidxGet> list = new LinkedList<>();
             iterator.forEachRemaining(result -> {
-                // 根据数据表拿到的RowKey反查数据表，获取整行数据
                 byte[] dataRow = result.getRow();
                 SidxGet dataGet = new SidxGet().of(dataRow).build();
-                SidxResult data = get(sidxTable, dataGet);
-                results.add(data);
+                list.add(dataGet);
             });
 
-            return results.iterator();
+            // 根据数据表拿到的RowKey反查数据表，获取整行数据
+            return get(sidxTable, list);
         } else {
             /* The data can be found from given index table */
             SidxScan sidxScan = new SidxScan().of()
@@ -295,20 +304,18 @@ public class SidxOperation {
 
             SidxTable indexTable = new SidxTable().of(indexTableName).build();
             SidxResult indexTableResult = operator.scan(indexTable, sidxScan);
-
             Iterator<Result> iterator = indexTableResult.getIterator();
-            List<SidxResult> results = new LinkedList<>();
 
+            List<SidxGet> list = new LinkedList<>();
             iterator.forEachRemaining(result -> {
-                // 根据索引表拿到的RowKey反查数据表
                 String[] indexRow = Bytes.toString(result.getRow()).split(Constants.INDEX_TABLE_NAME_SEPARATOR);
                 String dataRow = indexRow[indexRow.length - 1];
                 SidxGet dataGet = new SidxGet().of(Bytes.toBytes(dataRow)).build();
-                SidxResult data = get(sidxTable, dataGet);
-                results.add(data);
+                list.add(dataGet);
             });
 
-            return results.iterator();
+            // 根据数据表拿到的RowKey反查数据表，获取整行数据
+            return get(sidxTable, list);
         }
     }
 }

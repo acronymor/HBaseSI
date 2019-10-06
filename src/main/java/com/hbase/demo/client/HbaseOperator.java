@@ -118,6 +118,38 @@ public class HbaseOperator {
         return new SidxResult().build();
     }
 
+    public SidxResult get(SidxTable sidxTable, List<SidxGet> sidxGets) {
+        Connection conn = sidxConnection.getHbaseConnection();
+
+        List<Get> list = new LinkedList<>();
+        sidxGets.forEach(t -> list.add(t.getGet()));
+
+        try (Table table = conn.getTable(sidxTable.getTableName())) {
+            Result[] results = table.get(list);
+
+            Iterator<Result> iterator = new Iterator<Result>() {
+                private int idx = 0;
+
+                @Override
+                public boolean hasNext() {
+                    return idx >= results.length ? false : true;
+                }
+
+                @Override
+                public Result next() {
+                    return results[idx++];
+                }
+            };
+
+            return new SidxResult().of(iterator);
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return new SidxResult().build();
+    }
+
     public SidxResult scan(SidxTable sidxTable, SidxScan sidxScan) {
         Connection conn = sidxConnection.getHbaseConnection();
 
