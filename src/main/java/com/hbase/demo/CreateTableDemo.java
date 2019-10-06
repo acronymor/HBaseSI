@@ -1,5 +1,6 @@
 package com.hbase.demo;
 
+import com.hbase.demo.client.SidxOperation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -7,30 +8,21 @@ import java.io.IOException;
 
 /**
  * @author apktool
- * @title: com.hbase.demo.Demo
+ * @title: com.hbase.demo.CreateTableDemo
  * @description: TODO
- * @date 2019-09-30 22:39
+ * @date 2019-10-06 11:42
  */
-
 @Service
-public class Demo {
-
+public class CreateTableDemo {
     @Autowired
-    private CreateTableDemo createTableDemo;
-
-    @Autowired
-    private GetDemo getDemo;
-
-    @Autowired
-    private PutDemo putDemo;
+    private SidxOperation sidxOperation;
 
     /**
      * @param args
      * @throws IOException
      */
     public void start(String[] args) throws IOException {
-        // createTableDemo.start(args);
-        // putDemo.start(args);
-        getDemo.start(args);
+        boolean flag = sidxOperation.createTable();
+        System.out.println(flag);
     }
 }

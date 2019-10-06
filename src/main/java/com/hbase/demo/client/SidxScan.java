@@ -40,14 +40,14 @@ public class SidxScan {
         return this;
     }
 
-    public SidxScan setRowlFilter(SidxCompareOperator sidxCompareOperator, String value) {
+    public SidxScan setRowlFilter(SidxOperatorNode.SidxCompareOperatorKind sidxCompareOperator, String value) {
         CompareOperator compareOperator = convert(sidxCompareOperator);
         Filter filter = new RowFilter(compareOperator, new SubstringComparator(value));
         filters.addFilter(filter);
         return this;
     }
 
-    public SidxScan setValueFilter(SidxCompareOperator sidxCompareOperator, String value) {
+    public SidxScan setValueFilter(SidxOperatorNode.SidxCompareOperatorKind sidxCompareOperator, String value) {
         CompareOperator compareOperator = convert(sidxCompareOperator);
         Filter filter = new ValueFilter(compareOperator, new SubstringComparator(value));
         filters.addFilter(filter);
@@ -87,7 +87,7 @@ public class SidxScan {
         return this;
     }
 
-    private CompareOperator convert(SidxCompareOperator compareOperator) {
+    private CompareOperator convert(SidxOperatorNode.SidxCompareOperatorKind compareOperator) {
         switch (compareOperator) {
             case EQUAL:
                 return CompareOperator.EQUAL;
@@ -104,27 +104,5 @@ public class SidxScan {
             default:
                 return CompareOperator.NO_OP;
         }
-    }
-
-    /**
-     * Wrapper of CompareOperator
-     */
-    public enum SidxCompareOperator {
-        /*
-         * EQUAL             |   ==
-         * GREATER           |   >
-         * GREATER_OR_EQUAL  |   >=
-         * LESS              |   <
-         * LESS_OR_EQUAL     |   <=
-         * NOT_EQUAL         |   !=
-         * NO_OP
-         */
-        EQUAL,
-        GREATER,
-        GREATER_OR_EQUAL,
-        LESS,
-        LESS_OR_EQUAL,
-        NOT_EQUAL,
-        NO_OP;
     }
 }

@@ -239,13 +239,17 @@ public class SidxOperation {
 
     /**
      * @param sidxTable
-     * @param family
-     * @param qualifier
-     * @param value
+     * @param node
      * @return SidxResult
      * @description: get data from index table and data table
      */
-    public Iterator<SidxResult> get(SidxTable sidxTable, byte[] family, byte[] qualifier, byte[] value) {
+    public Iterator<SidxResult> get(SidxTable sidxTable, SidxOperatorNode node) {
+
+        SidxOperatorNode.SidxCompareOperatorKind kind = node.getKind();
+        byte[] family = node.getFamilyIdentifier();
+        byte[] qualifier = node.getColumnIdentifier();
+        byte[] value = node.getLiteral();
+
         SidxTableConfig meta = achieveMeta(sidxTable);
 
         List<String> indexTableNames = Utils.deduceIndexTableNames(meta);
@@ -254,7 +258,7 @@ public class SidxOperation {
         if (!indexTableNames.contains(indexTableName)) {
             /* The data can't be find from any index table */
             SidxScan sidxScan = new SidxScan().of().addColumnFamily(family).addQualifier(qualifier)
-                .setValueFilter(SidxScan.SidxCompareOperator.EQUAL, Bytes.toString(value))
+                .setValueFilter(kind, Bytes.toString(value))
                 .setColumnCountGetFilter(10)
                 .setPageFilter(10L)
                 .buildFilter()
@@ -275,7 +279,7 @@ public class SidxOperation {
             // 根据条件遍历索引表
             SidxScan sidxScan = new SidxScan().of()
                 .setKeyOnlyFilter()
-                .setRowlFilter(SidxScan.SidxCompareOperator.EQUAL, Bytes.toString(value))
+                .setRowlFilter(kind, Bytes.toString(value))
                 .buildFilter()
                 .build();
 
