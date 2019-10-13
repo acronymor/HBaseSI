@@ -30,6 +30,9 @@ public class Demo {
     @Autowired
     private UpdateDemo updateDemo;
 
+    @Autowired
+    private ScanDemo scanDemo;
+
     /**
      * @param args
      * @throws IOException
@@ -40,5 +43,6 @@ public class Demo {
         getDemo.start(args);
         deleteDemo.start(args);
         updateDemo.start(args);
+        scanDemo.start(args);
     }
 }

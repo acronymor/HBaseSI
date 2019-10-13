@@ -327,6 +327,17 @@ public class SidxOperation {
 
     /**
      * @param sidxTable
+     * @param sidxScan
+     * @return SidxResult
+     * @description: scan data from data table
+     */
+    public SidxResult scan(SidxTable sidxTable, SidxScan sidxScan) {
+        SidxResult result = operator.scan(sidxTable, sidxScan);
+        return result;
+    }
+
+    /**
+     * @param sidxTable
      * @param sidxDelete
      * @return boolean
      * @description: delete data from index table and data table
