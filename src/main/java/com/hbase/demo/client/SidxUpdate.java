@@ -14,46 +14,46 @@ import java.util.List;
 
 /**
  * @author apktool
- * @title: com.hbase.demo.client.SidxPut
- * @description: POJO
- * @date 2019-10-01 22:28
+ * @title: com.hbase.demo.client.SidxUpdate
+ * @description: TODO
+ * @date 2019-10-13 14:20
  */
 @NoArgsConstructor
-public class SidxPut {
+public class SidxUpdate {
     @Getter
-    private Put put;
+    private Put update;
 
     private List<Cell> cells = new ArrayList<>();
 
     private CellBuilder cellBuilder = CellBuilderFactory.create(CellBuilderType.DEEP_COPY);
 
-    public SidxPut of(byte[] rowKey) {
+    public SidxUpdate of(byte[] rowKey) {
         this.cellBuilder.setRow(rowKey);
-        this.put = new Put(rowKey);
+        this.update = new Put(rowKey);
         return this;
     }
 
-    public SidxPut addColumnFamily(byte[] columnFamily) {
+    public SidxUpdate addColumnFamily(byte[] columnFamily) {
         this.cellBuilder.setFamily(columnFamily);
         return this;
     }
 
-    public SidxPut addQualifier(byte[] qualifier) {
+    public SidxUpdate addQualifier(byte[] qualifier) {
         this.cellBuilder.setQualifier(qualifier);
         return this;
     }
 
-    public SidxPut addValue(byte[] value) {
+    public SidxUpdate addValue(byte[] value) {
         this.cellBuilder.setValue(value);
         return this;
     }
 
-    public SidxPut addTs(long ts) {
+    public SidxUpdate addTs(long ts) {
         this.cellBuilder.setTimestamp(ts);
         return this;
     }
 
-    public SidxPut buildCell() {
+    public SidxUpdate buildCell() {
         this.cellBuilder.setType(Cell.Type.Put);
         Cell cell = this.cellBuilder.build();
         cells.add(cell);
@@ -61,21 +61,16 @@ public class SidxPut {
         return this;
     }
 
-    public SidxPut build() {
+    public SidxUpdate build() {
 
         cells.forEach(c -> {
             try {
-                this.put.add(c);
+                this.update.add(c);
             } catch (IOException e) {
                 e.printStackTrace();
             }
         });
 
-        return this;
-    }
-
-    public SidxPut copyOf(Put put) {
-        this.put = put;
         return this;
     }
 }

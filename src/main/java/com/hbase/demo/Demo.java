@@ -27,6 +27,9 @@ public class Demo {
     @Autowired
     private DeleteDemo deleteDemo;
 
+    @Autowired
+    private UpdateDemo updateDemo;
+
     /**
      * @param args
      * @throws IOException
@@ -36,5 +39,6 @@ public class Demo {
         putDemo.start(args);
         getDemo.start(args);
         deleteDemo.start(args);
+        updateDemo.start(args);
     }
 }

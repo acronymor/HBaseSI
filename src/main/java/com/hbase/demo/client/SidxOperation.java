@@ -165,11 +165,13 @@ public class SidxOperation {
     }
 
     public boolean put(SidxTable sidxTable, SidxPut dataPut) {
-        operator.put(sidxTable, dataPut);
+        boolean flag = operator.put(sidxTable, dataPut);
 
         SidxTableConfig tableConfig = achieveMeta(sidxTable);
 
-        tableConfig.getTableColumns().stream().filter(t -> t.isIndex()).forEach(t -> {
+        List<SidxTableConfig.TableColumn> tableColumns = tableConfig.getTableColumns().stream().filter(t -> t.isIndex()).collect(Collectors.toList());
+
+        for (SidxTableConfig.TableColumn t : tableColumns) {
 
             List<Cell> list = dataPut.getPut().get(Bytes.toBytes(t.getFamily()), Bytes.toBytes(t.getQualifier()));
             Cell item = list.get(0);
@@ -189,10 +191,10 @@ public class SidxOperation {
             String indexTableName = Utils.deduceIndexTableName(tableConfig.getTableName(), t.getFamily(), t.getQualifier());
             SidxTable indexTable = new SidxTable().of(indexTableName);
 
-            operator.put(indexTable, indexPut);
-        });
+            flag &= operator.put(indexTable, indexPut);
+        }
 
-        return true;
+        return flag;
     }
 
     /**
@@ -380,5 +382,38 @@ public class SidxOperation {
         delFlag &= operator.delete(sidxTable, sidxDelete);
 
         return delFlag;
+    }
+
+    public boolean update(SidxTable sidxTable, SidxUpdate dataUpdate) {
+
+        boolean flag = true;
+
+        SidxGet get = new SidxGet().of(dataUpdate.getUpdate().getRow());
+        SidxResult getResult = get(sidxTable, get);
+        if (getResult.getResult().isEmpty()) {
+            return false;
+        }
+
+        SidxTableConfig tableConfig = achieveMeta(sidxTable);
+        for (SidxTableConfig.TableColumn column : tableConfig.getTableColumns()) {
+            byte[] family = Bytes.toBytes(column.getFamily());
+            byte[] qualifier = Bytes.toBytes(column.getQualifier());
+            List<Cell> cells = dataUpdate.getUpdate().get(family, qualifier);
+            if (cells == null || cells.size() == 0) {
+                byte[] value = getResult.getResult().getValue(family, qualifier);
+                dataUpdate.addColumnFamily(family).addQualifier(qualifier).addValue(value).buildCell();
+            }
+        }
+
+        dataUpdate.build();
+
+        SidxDelete delete = new SidxDelete().of(dataUpdate.getUpdate().getRow());
+        flag = delete(sidxTable, delete);
+
+        if (flag) {
+            flag &= put(sidxTable, new SidxPut().copyOf(dataUpdate.getUpdate()));
+        }
+
+        return flag;
     }
 }
