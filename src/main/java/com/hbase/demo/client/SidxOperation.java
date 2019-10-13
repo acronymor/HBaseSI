@@ -16,6 +16,7 @@ import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * @author apktool
@@ -320,5 +321,64 @@ public class SidxOperation {
             // 根据数据表拿到的RowKey反查数据表，获取整行数据
             return get(sidxTable, list);
         }
+    }
+
+    /**
+     * @param sidxTable
+     * @param sidxDelete
+     * @return boolean
+     * @description: delete data from index table and data table
+     */
+    public boolean delete(SidxTable sidxTable, SidxDelete sidxDelete) {
+        SidxTableConfig tableConfig = achieveMeta(sidxTable);
+
+        boolean delFlag = true;
+
+        byte[] columnFamily = sidxDelete.getColumnFamily();
+        byte[] qualifier = sidxDelete.getQualifier();
+
+        SidxGet get = new SidxGet().of(sidxDelete.getDelete().getRow());
+        if (columnFamily != null) {
+            get.addColumnFamily(columnFamily).addQualifier(qualifier).build();
+        }
+
+        if (qualifier != null) {
+            get.addQualifier(qualifier).build();
+        }
+
+        // 删除索引表
+        SidxResult result = get(sidxTable, get);
+
+        List<SidxTableConfig.TableColumn> tableColumns;
+
+        if (columnFamily == null && qualifier == null) {
+            tableColumns = tableConfig.getTableColumns().stream().filter(t ->
+                t.isIndex()).collect(Collectors.toList()
+            );
+        } else if (qualifier == null) {
+            tableColumns = tableConfig.getTableColumns().stream().filter(t ->
+                t.isIndex() && t.getFamily().equals(Bytes.toString(columnFamily))
+            ).collect(Collectors.toList());
+        } else {
+            tableColumns = tableConfig.getTableColumns().stream().filter(t ->
+                t.isIndex() && t.getFamily().equals(Bytes.toString(columnFamily)) && t.getQualifier().equals(Bytes.toString(qualifier))
+            ).collect(Collectors.toList());
+        }
+
+        for (SidxTableConfig.TableColumn entry : tableColumns) {
+            byte[] column = result.getResult().getValue(Bytes.toBytes(entry.getFamily()), Bytes.toBytes(entry.getQualifier()));
+            byte[] indexRowKey = Utils.deduceIndexRowkey(sidxDelete.getDelete().getRow(), column, tableConfig.getTableConfig().getIndexTableRegions());
+
+            String indexTableName = Utils.deduceIndexTableName(sidxTable, entry.getFamily(), entry.getQualifier());
+            SidxTable indexTable = new SidxTable().of(indexTableName);
+            SidxDelete delete = new SidxDelete().of(indexRowKey);
+
+            delFlag = delFlag & operator.delete(indexTable, delete);
+        }
+
+        // 删除数据表
+        delFlag &= operator.delete(sidxTable, sidxDelete);
+
+        return delFlag;
     }
 }

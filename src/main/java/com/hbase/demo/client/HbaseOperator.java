@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -162,6 +163,36 @@ public class HbaseOperator {
 
         return new SidxResult().build();
 
+    }
+
+    public boolean delete(SidxTable sidxTable, List<SidxDelete> sidxDeletes) {
+        Connection conn = sidxConnection.getHbaseConnection();
+
+        List<Delete> list = new ArrayList<>(sidxDeletes.size());
+
+        sidxDeletes.forEach(t -> list.add(t.getDelete()));
+
+        try (Table table = conn.getTable(sidxTable.getTableName())) {
+            table.delete(list);
+        } catch (IOException e) {
+            e.printStackTrace();
+            return false;
+        }
+
+        return true;
+    }
+
+    public boolean delete(SidxTable sidxTable, SidxDelete sidxDelete) {
+        Connection conn = sidxConnection.getHbaseConnection();
+
+        try (Table table = conn.getTable(sidxTable.getTableName())) {
+            table.delete(sidxDelete.getDelete());
+        } catch (IOException e) {
+            e.printStackTrace();
+            return false;
+        }
+
+        return true;
     }
 
     public void close() {
