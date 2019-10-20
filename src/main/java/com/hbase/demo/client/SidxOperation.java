@@ -8,18 +8,23 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.hadoop.hbase.Cell;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.util.Bytes;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.scheduling.annotation.AsyncResult;
 import org.springframework.stereotype.Service;
 
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 /**
  * @author apktool
  * @title com.hbase.demo.client.SidxOperation
- * @description Basic operation of Sidx Table
+ * @description Basic operation of SidxTable
  * @date 2019-10-01 20:48
  */
 
@@ -49,7 +54,26 @@ public class SidxOperation extends AbstractSidxOperation {
      */
     @Override
     public boolean createTableAsync() {
-        return false;
+        boolean flag = true;
+        flag &= createMetaTable();
+        flag &= createDataTable();
+        try {
+            flag &= createIndexTableAsync().get();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        }
+
+        log.info("All table have been created successfully");
+
+        return flag;
+    }
+
+    @Async
+    Future<Boolean> createIndexTableAsync() {
+        boolean flag = createIndexTable();
+        return new AsyncResult<>(flag);
     }
 
     /**
@@ -60,12 +84,28 @@ public class SidxOperation extends AbstractSidxOperation {
      */
     @Override
     public boolean putSync(SidxTable sidxTable, SidxPut sidxPut) {
+        return putData(sidxTable, sidxPut) && putIndex(sidxTable, sidxPut, (t, p) -> put(t, p));
+    }
 
-        boolean flag = put(sidxTable, sidxPut);
+    /**
+     * @param sidxTable
+     * @param sidxPut
+     * @return boolean
+     * @description put data asynchronously
+     */
+    @Override
+    public boolean putAsync(SidxTable sidxTable, SidxPut sidxPut) {
+        return putData(sidxTable, sidxPut) && putIndex(sidxTable, sidxPut, (t, p) -> putIndex(t, p));
+    }
 
+    private boolean putIndex(SidxTable sidxTable, SidxPut sidxPut, BiFunction<SidxTable, SidxPut, Boolean> function) {
         SidxTableConfig tableConfig = achieveMeta(sidxTable);
+        boolean flag = true;
 
-        List<SidxTableConfig.TableColumn> tableColumns = tableConfig.getTableColumns().stream().filter(SidxTableConfig.TableColumn::isIndex).collect(Collectors.toList());
+        List<SidxTableConfig.TableColumn> tableColumns = tableConfig.getTableColumns()
+            .stream()
+            .filter(SidxTableConfig.TableColumn::isIndex)
+            .collect(Collectors.toList());
 
         for (SidxTableConfig.TableColumn t : tableColumns) {
 
@@ -87,21 +127,19 @@ public class SidxOperation extends AbstractSidxOperation {
             String indexTableName = Utils.deduceIndexTableName(tableConfig.getTableName(), t.getFamily(), t.getQualifier());
             SidxTable indexTable = new SidxTable().of(indexTableName);
 
-            flag &= put(indexTable, indexPut);
+            flag &= function.apply(indexTable, indexPut);
         }
 
         return flag;
     }
 
-    /**
-     * @param sidxTable
-     * @param sidxPut
-     * @return boolean
-     * @description put data asynchronously
-     */
-    @Override
-    public boolean putAsync(SidxTable sidxTable, SidxPut sidxPut) {
-        return false;
+    Boolean putData(SidxTable sidxTable, SidxPut sidxPut) {
+        return putIndex(sidxTable, sidxPut);
+    }
+
+    @Async
+    Boolean putIndex(SidxTable sidxTable, SidxPut sidxPut) {
+        return put(sidxTable, sidxPut);
     }
 
     /**
@@ -176,7 +214,7 @@ public class SidxOperation extends AbstractSidxOperation {
      * @param sidxTable
      * @param node
      * @return boolean
-     * @description get data asynchronously
+     * @description TODO
      */
     @Override
     public SidxResult getAsync(SidxTable sidxTable, SidxCall node) {
@@ -191,6 +229,21 @@ public class SidxOperation extends AbstractSidxOperation {
      */
     @Override
     public boolean deleteSync(SidxTable sidxTable, SidxDelete sidxDelete) {
+        return deleteData(sidxTable, sidxDelete) && deleteIndex(sidxTable, sidxDelete, (t, d) -> delete(t, d));
+    }
+
+    /**
+     * @param sidxTable
+     * @param sidxDelete
+     * @return boolean
+     * @description delete data asynchronously
+     */
+    @Override
+    public boolean deleteAsync(SidxTable sidxTable, SidxDelete sidxDelete) {
+        return deleteData(sidxTable, sidxDelete) && deleteIndex(sidxTable, sidxDelete, (t, d) -> deleteIndex(t, d));
+    }
+
+    boolean deleteIndex(SidxTable sidxTable, SidxDelete sidxDelete, BiFunction<SidxTable, SidxDelete, Boolean> function) {
         SidxTableConfig tableConfig = achieveMeta(sidxTable);
 
         boolean delFlag = true;
@@ -233,24 +286,19 @@ public class SidxOperation extends AbstractSidxOperation {
             SidxTable indexTable = new SidxTable().of(indexTableName);
             SidxDelete delete = new SidxDelete().of(indexRowKey);
 
-            delFlag = delFlag & delete(indexTable, delete);
+            delFlag = delFlag & function.apply(indexTable, delete);
         }
-
-        // 删除数据表
-        delFlag &= delete(sidxTable, sidxDelete);
 
         return delFlag;
     }
 
-    /**
-     * @param sidxTable
-     * @param sidxDelete
-     * @return boolean
-     * @description delete data asynchronously
-     */
-    @Override
-    public boolean deleteAsync(SidxTable sidxTable, SidxDelete sidxDelete) {
-        return false;
+    boolean deleteData(SidxTable sidxTable, SidxDelete sidxDelete) {
+        return delete(sidxTable, sidxDelete);
+    }
+
+    @Async
+    boolean deleteIndex(SidxTable sidxTable, SidxDelete sidxDelete) {
+        return delete(sidxTable, sidxDelete);
     }
 
 
@@ -283,20 +331,14 @@ public class SidxOperation extends AbstractSidxOperation {
         sidxUpdate.build();
 
         SidxDelete delete = new SidxDelete().of(sidxUpdate.getUpdate().getRow());
-        boolean flag = delete(sidxTable, delete);
-
-        if (flag) {
-            flag &= put(sidxTable, new SidxPut().copyOf(sidxUpdate.getUpdate()));
-        }
-
-        return flag;
+        return deleteSync(sidxTable, delete) && putSync(sidxTable, new SidxPut().copyOf(sidxUpdate.getUpdate()));
     }
 
     /**
      * @param sidxTable
      * @param sidxUpdate
      * @return boolean
-     * @description update data asynchronously
+     * @description TODO
      */
     @Override
     public boolean updateAsync(SidxTable sidxTable, SidxUpdate sidxUpdate) {

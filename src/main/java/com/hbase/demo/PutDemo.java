@@ -27,6 +27,11 @@ public class PutDemo {
     private SidxTableConfig sidxTableConfig;
 
     public void start(String[] args) throws IOException {
+        // putDataSyncDemo();
+        putDataAsyncDemo();
+    }
+
+    public void putDataSyncDemo() {
         SidxTable table = new SidxTable().of(sidxTableConfig.getTableName());
 
         int range = 10;
@@ -61,8 +66,44 @@ public class PutDemo {
             data.build();
 
             sidxOperation.putSync(table, data);
-
         }
+    }
 
+    public void putDataAsyncDemo() {
+        SidxTable table = new SidxTable().of(sidxTableConfig.getTableName());
+
+        int range = 10;
+
+        for (int i = 0; i < range; i++) {
+            String rowKey = String.format("row%02d", i);
+
+            SidxPut data = new SidxPut().of(Bytes.toBytes(rowKey));
+
+            sidxTableConfig.getTableColumns().forEach(t -> {
+                Random random = new Random();
+                if ("java.lang.Integer".equals(t.getType().getTypeClassName())) {
+                    int tmp = random.nextInt(range);
+
+                    data.addColumnFamily(Bytes.toBytes(t.getFamily()))
+                        .addQualifier(Bytes.toBytes(t.getQualifier()))
+                        .addValue(Bytes.toBytes(tmp))
+                        .addTs(System.currentTimeMillis())
+                        .buildCell();
+                }
+                if ("java.lang.Long".equals(t.getType().getTypeClassName())) {
+                    long tmp = random.nextInt(range);
+
+                    data.addColumnFamily(Bytes.toBytes(t.getFamily()))
+                        .addQualifier(Bytes.toBytes(t.getQualifier()))
+                        .addValue(Bytes.toBytes(tmp))
+                        .addTs(System.currentTimeMillis())
+                        .buildCell();
+                }
+            });
+
+            data.build();
+
+            sidxOperation.putAsync(table, data);
+        }
     }
 }

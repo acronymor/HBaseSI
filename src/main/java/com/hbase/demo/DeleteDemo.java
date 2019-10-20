@@ -21,12 +21,12 @@ public class DeleteDemo {
 
     public void start(String[] args) {
         SidxTable table = new SidxTable().of("test");
-        // deleteRow(table);
-        deleteSingleFamily(table);
-        deleteSingleColumn(table);
+        deleteSyncRow(table);
+        deleteSyncSingleFamily(table);
+        deleteSyncSingleColumn(table);
     }
 
-    private void deleteRow(SidxTable table) {
+    private void deleteSyncRow(SidxTable table) {
         byte[] rowKey = Bytes.toBytes("row06");
 
         SidxDelete delete = new SidxDelete().of(rowKey);
@@ -35,7 +35,7 @@ public class DeleteDemo {
         System.out.println(flag);
     }
 
-    private void deleteSingleFamily(SidxTable table) {
+    private void deleteSyncSingleFamily(SidxTable table) {
         byte[] columnFamily = Bytes.toBytes("f2");
         byte[] rowKey = Bytes.toBytes("row07");
 
@@ -45,7 +45,7 @@ public class DeleteDemo {
         System.out.println(flag);
     }
 
-    private void deleteSingleColumn(SidxTable table) {
+    private void deleteSyncSingleColumn(SidxTable table) {
         byte[] columnFamily = Bytes.toBytes("f2");
         byte[] qualifier = Bytes.toBytes("c1");
 
@@ -56,5 +56,4 @@ public class DeleteDemo {
         boolean flag = sidxOperation.deleteSync(table, delete);
         System.out.println(flag);
     }
-
 }

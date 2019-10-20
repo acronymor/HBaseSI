@@ -23,7 +23,17 @@ public class CreateTableDemo {
      * @throws IOException
      */
     public void start(String[] args) throws IOException {
+        createTableSyncDemo();
+        createTableAsyncDemo();
+    }
+
+    private void createTableSyncDemo() {
         boolean flag = sidxOperation.createTableSync();
+        System.out.println(flag);
+    }
+
+    private void createTableAsyncDemo() {
+        boolean flag = sidxOperation.createTableAsync();
         System.out.println(flag);
     }
 }
