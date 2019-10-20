@@ -10,8 +10,8 @@ import java.util.List;
 
 /**
  * @author apktool
- * @title: com.hbase.demo.utils.Utils
- * @description: utils
+ * @title com.hbase.demo.utils.Utils
+ * @description utils
  * @date 2019-10-02 11:03
  */
 public class Utils {
@@ -24,7 +24,7 @@ public class Utils {
         List<String> indexTables = new ArrayList<>(10);
 
         struct.getTableColumns().stream()
-            .filter(t -> t.isIndex())
+            .filter(SidxTableConfig.TableColumn::isIndex)
             .forEach(t -> indexTables.add(deduceIndexTableName(struct.getTableName(), t.getFamily(), t.getQualifier())));
 
         return indexTables;
@@ -116,7 +116,7 @@ public class Utils {
      * @return int
      * @description create hash
      */
-    private static int hash(byte a[], int offset, int length) {
+    private static int hash(byte[] a, int offset, int length) {
         if (a == null) {
             return 0;
         }

@@ -14,8 +14,8 @@ import java.util.List;
 
 /**
  * @author apktool
- * @title: com.hbase.demo.client.SidxUpdate
- * @description: TODO
+ * @title com.hbase.demo.client.SidxUpdate
+ * @description TODO
  * @date 2019-10-13 14:20
  */
 @NoArgsConstructor

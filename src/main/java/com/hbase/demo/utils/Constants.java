@@ -2,8 +2,8 @@ package com.hbase.demo.utils;
 
 /**
  * @author apktool
- * @title: com.hbase.demo.utils.Constants
- * @description: Define parts of constants
+ * @title com.hbase.demo.utils.Constants
+ * @description Define parts of constants
  * @date 2019-10-02 11:37
  */
 public class Constants {

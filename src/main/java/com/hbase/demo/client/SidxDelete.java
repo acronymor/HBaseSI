@@ -6,8 +6,8 @@ import org.apache.hadoop.hbase.client.Delete;
 
 /**
  * @author apktool
- * @title: com.hbase.demo.client.SidxDelete
- * @description: TODO
+ * @title com.hbase.demo.client.SidxDelete
+ * @description TODO
  * @date 2019-10-13 08:05
  */
 @Getter

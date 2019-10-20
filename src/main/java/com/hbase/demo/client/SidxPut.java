@@ -14,8 +14,8 @@ import java.util.List;
 
 /**
  * @author apktool
- * @title: com.hbase.demo.client.SidxPut
- * @description: POJO
+ * @title com.hbase.demo.client.SidxPut
+ * @description POJO
  * @date 2019-10-01 22:28
  */
 @NoArgsConstructor

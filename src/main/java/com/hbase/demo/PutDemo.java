@@ -4,6 +4,7 @@ import com.hbase.demo.client.SidxOperation;
 import com.hbase.demo.client.SidxPut;
 import com.hbase.demo.client.SidxTable;
 import com.hbase.demo.configuration.SidxTableConfig;
+import lombok.Setter;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -13,16 +14,16 @@ import java.util.Random;
 
 /**
  * @author apktool
- * @title: com.hbase.demo.PutDemo
- * @description: TODO
+ * @title com.hbase.demo.PutDemo
+ * @description TODO
  * @date 2019-10-06 11:43
  */
 @Service
 public class PutDemo {
-    @Autowired
+    @Setter(onMethod = @__({@Autowired}))
     private SidxOperation sidxOperation;
 
-    @Autowired
+    @Setter(onMethod = @__({@Autowired}))
     private SidxTableConfig sidxTableConfig;
 
     public void start(String[] args) throws IOException {
@@ -59,7 +60,7 @@ public class PutDemo {
 
             data.build();
 
-            sidxOperation.put(table, data);
+            sidxOperation.putSync(table, data);
 
         }
 

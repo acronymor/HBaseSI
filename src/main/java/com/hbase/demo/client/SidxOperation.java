@@ -1,185 +1,81 @@
 package com.hbase.demo.client;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hbase.demo.condition.*;
 import com.hbase.demo.configuration.SidxTableConfig;
 import com.hbase.demo.utils.Constants;
 import com.hbase.demo.utils.Utils;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.hadoop.hbase.Cell;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.util.Bytes;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
-import java.io.IOException;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.stream.Collectors;
 
 /**
  * @author apktool
- * @title: com.hbase.demo.client.SidxOperation
- * @description: Basic operation of Sidx Table
+ * @title com.hbase.demo.client.SidxOperation
+ * @description Basic operation of Sidx Table
  * @date 2019-10-01 20:48
  */
-@Component
-public class SidxOperation {
-    private static final Logger logger = LoggerFactory.getLogger(SidxOperation.class);
 
-    @Autowired
-    private HbaseOperator operator;
-
-
-    @Autowired
-    private SidxTableConfig tableConfig;
+@Service
+@Slf4j
+public class SidxOperation extends AbstractSidxOperation {
 
     /**
      * @return boolean
-     * @description: Create Table from SidxTableConfig
+     * @description Create tables synchronously
      */
-    public boolean createTable() {
+    @Override
+    public boolean createTableSync() {
         boolean flag = true;
+        flag &= createMetaTable();
         flag &= createDataTable();
         flag &= createIndexTable();
-        flag &= createMetaTable();
-        return flag;
-    }
 
-    /**
-     * @return boolean
-     * @description create index table
-     */
-    private boolean createDataTable() {
-        String dataTableName = tableConfig.getTableName();
-
-        SidxTable dataTable = new SidxTable().of(dataTableName);
-
-        boolean flag = true;
-
-        Set<String> sets = new HashSet<>();
-        tableConfig.getTableColumns().forEach(t -> sets.add(t.getFamily()));
-
-        for (String item : sets) {
-            dataTable.addColumnFamily(item)
-                .setDataBlockEncoding(tableConfig.getTableConfig().getDataTableBlockEncoding())
-                .setCompressType(tableConfig.getTableConfig().getDataTableCompression())
-                .setBlockSize(tableConfig.getTableConfig().getDataTableBlockSize())
-                .buildCF();
-        }
-
-        dataTable.build();
-
-        if (!operator.isTableExisted(dataTable)) {
-            flag = operator.createTable(dataTable, tableConfig.getTableConfig().getDataTableRegions());
-        }
-
-        if (!flag) {
-            logger.error("DataTable [" + dataTableName + "] have been created failed");
-            return false;
-        }
-
-        logger.info("DataTable [" + dataTableName + "] have been created successfully");
-        return true;
-    }
-
-    /**
-     * @return boolean
-     * @description create index table
-     */
-    private boolean createIndexTable() {
-        List<String> indexTableNames = Utils.deduceIndexTableNames(tableConfig);
-
-        boolean flag = indexTableNames.stream().map(t ->
-            new SidxTable().of(t)
-                .addColumnFamily(Constants.INDEX_TABLE_COLUMN_FAMILY)
-                .setDataBlockEncoding(tableConfig.getTableConfig().getIndexTableBlockEncoding())
-                .setCompressType(tableConfig.getTableConfig().getIndexTableCompression())
-                .setBlockSize(tableConfig.getTableConfig().getIndexTableBlockSize())
-                .buildCF()
-                .build())
-            .filter(indexTable -> !operator.isTableExisted(indexTable))
-            .map(indexTable -> operator.createTable(indexTable, tableConfig.getTableConfig().getIndexTableRegions()))
-            .reduce(true, (a, b) -> a && b);
-
-        if (!flag) {
-            logger.error("IndexTables " + indexTableNames + " have been created failed");
-        }
-        logger.info("IndexTables " + indexTableNames + " have been created successfully");
+        log.info("All table have been created successfully");
 
         return flag;
     }
 
     /**
      * @return boolean
-     * @description create meta table
+     * @description Create tables asynchronously
      */
-    private boolean createMetaTable() {
-        byte[] tableConfigs = new byte[0];
-        byte[] tableColumns = new byte[0];
-
-        try {
-            ObjectMapper mapper = new ObjectMapper();
-            tableConfigs = mapper.writeValueAsBytes(tableConfig.getTableConfig());
-            tableColumns = mapper.writeValueAsBytes(tableConfig.getTableColumns());
-        } catch (JsonProcessingException e) {
-            e.printStackTrace();
-        }
-
-        String row = tableConfig.getTableName();
-        SidxTable metaTable = new SidxTable().of(Constants.META_TABLE_NAME)
-            .addColumnFamily(Constants.META_TABLE_COLUMN_FAMILY)
-            .buildCF()
-            .build();
-
-        SidxPut metaPut = new SidxPut().of(Bytes.toBytes(row))
-            .addColumnFamily(Bytes.toBytes(Constants.META_TABLE_COLUMN_FAMILY))
-            .addQualifier(Bytes.toBytes(Constants.META_TABLE_COLUMN_QUALIFIER_TABLE_CONFIG))
-            .addValue(tableConfigs)
-            .buildCell()
-            .addQualifier(Bytes.toBytes(Constants.META_TABLE_COLUMN_QUALIFIER_TABLE_COLUMNS))
-            .addValue(tableColumns)
-            .buildCell()
-            .build();
-
-        boolean flag = true;
-        if (!operator.isTableExisted(metaTable)) {
-            flag &= operator.createTable(metaTable, 1);
-        }
-
-        if (!flag) {
-            logger.error("MetaTable [" + Constants.META_TABLE_NAME + "] have been created failed");
-            return false;
-        }
-        logger.info("MetaTable [" + Constants.META_TABLE_NAME + "] have been created successfully");
-
-        flag = flag & operator.put(metaTable, metaPut);
-
-        if (!flag) {
-            logger.error("MetaData " + row + " have been put failed");
-        }
-        logger.info("MetaData [" + row + "] have been put successfully");
-
-        return true;
+    @Override
+    public boolean createTableAsync() {
+        return false;
     }
 
-    public boolean put(SidxTable sidxTable, SidxPut dataPut) {
-        boolean flag = operator.put(sidxTable, dataPut);
+    /**
+     * @param sidxTable
+     * @param sidxPut
+     * @return boolean
+     * @description put data synchronously
+     */
+    @Override
+    public boolean putSync(SidxTable sidxTable, SidxPut sidxPut) {
+
+        boolean flag = put(sidxTable, sidxPut);
 
         SidxTableConfig tableConfig = achieveMeta(sidxTable);
 
-        List<SidxTableConfig.TableColumn> tableColumns = tableConfig.getTableColumns().stream().filter(t -> t.isIndex()).collect(Collectors.toList());
+        List<SidxTableConfig.TableColumn> tableColumns = tableConfig.getTableColumns().stream().filter(SidxTableConfig.TableColumn::isIndex).collect(Collectors.toList());
 
         for (SidxTableConfig.TableColumn t : tableColumns) {
 
-            List<Cell> list = dataPut.getPut().get(Bytes.toBytes(t.getFamily()), Bytes.toBytes(t.getQualifier()));
+            List<Cell> list = sidxPut.getPut().get(Bytes.toBytes(t.getFamily()), Bytes.toBytes(t.getQualifier()));
             Cell item = list.get(0);
 
             int offset = item.getValueOffset();
             int len = item.getValueLength();
             byte[] column = Arrays.copyOfRange(item.getRowArray(), offset, offset + len);
-            byte[] indexRowKey = Utils.deduceIndexRowkey(dataPut.getPut().getRow(), column, tableConfig.getTableConfig().getIndexTableRegions());
+            byte[] indexRowKey = Utils.deduceIndexRowkey(sidxPut.getPut().getRow(), column, tableConfig.getTableConfig().getIndexTableRegions());
 
             SidxPut indexPut = new SidxPut().of(indexRowKey)
                 .addColumnFamily(Bytes.toBytes(Constants.INDEX_TABLE_COLUMN_FAMILY))
@@ -191,80 +87,31 @@ public class SidxOperation {
             String indexTableName = Utils.deduceIndexTableName(tableConfig.getTableName(), t.getFamily(), t.getQualifier());
             SidxTable indexTable = new SidxTable().of(indexTableName);
 
-            flag &= operator.put(indexTable, indexPut);
+            flag &= put(indexTable, indexPut);
         }
 
         return flag;
     }
 
     /**
-     * @param table
-     * @return SidxTableConfig
-     * @description: get meta from sidx.meta.table
-     */
-    public SidxTableConfig achieveMeta(SidxTable table) {
-        SidxTable metaTable = new SidxTable().of(Constants.META_TABLE_NAME)
-            .addColumnFamily(Constants.META_TABLE_COLUMN_FAMILY)
-            .buildCF()
-            .build();
-
-        SidxGet get = new SidxGet()
-            .of(table.getTableName().getName())
-            .build();
-
-        SidxResult result = get(metaTable, get);
-
-        List<SidxTableConfig.TableColumn> columns = new ArrayList<>();
-        SidxTableConfig.TableConfig config = new SidxTableConfig.TableConfig();
-        try {
-            ObjectMapper mapper = new ObjectMapper();
-
-            byte[] configsValue = result.getResult().getValue(Bytes.toBytes(Constants.META_TABLE_COLUMN_FAMILY), Bytes.toBytes(Constants.META_TABLE_COLUMN_QUALIFIER_TABLE_CONFIG));
-            config = mapper.readValue(configsValue, SidxTableConfig.TableConfig.class);
-
-            byte[] columnsValue = result.getResult().getValue(Bytes.toBytes(Constants.META_TABLE_COLUMN_FAMILY), Bytes.toBytes(Constants.META_TABLE_COLUMN_QUALIFIER_TABLE_COLUMNS));
-            columns = mapper.readValue(columnsValue, mapper.getTypeFactory().constructCollectionType(List.class, SidxTableConfig.TableColumn.class));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        SidxTableConfig meta = new SidxTableConfig();
-        meta.setTableName(table.getTableName().getNameAsString());
-        meta.setTableConfig(config);
-        meta.setTableColumns(columns);
-
-        return meta;
-    }
-
-    /**
      * @param sidxTable
-     * @param sidxGet
-     * @return SidxResult
-     * @description: get data from table
+     * @param sidxPut
+     * @return boolean
+     * @description put data asynchronously
      */
-    public SidxResult get(SidxTable sidxTable, SidxGet sidxGet) {
-        SidxResult result = operator.get(sidxTable, sidxGet);
-        return result;
-    }
-
-    /**
-     * @param sidxTable
-     * @param sidxGets
-     * @return SidxResult
-     * @description: get any data from table
-     */
-    public SidxResult get(SidxTable sidxTable, List<SidxGet> sidxGets) {
-        SidxResult result = operator.get(sidxTable, sidxGets);
-        return result;
+    @Override
+    public boolean putAsync(SidxTable sidxTable, SidxPut sidxPut) {
+        return false;
     }
 
     /**
      * @param sidxTable
      * @param node
-     * @return SidxResult
-     * @description: get data from index table and data table
+     * @return boolean
+     * @description get data synchronously
      */
-    public SidxResult get(SidxTable sidxTable, SidxCall node) {
+    @Override
+    public SidxResult getSync(SidxTable sidxTable, SidxCall node) {
         AbstractSidxNode[] operators = node.getOperators();
 
         SidxIdentifier identifier = (SidxIdentifier) operators[0];
@@ -289,7 +136,7 @@ public class SidxOperation {
                 .setPageFilter(10L)
                 .buildFilter()
                 .build();
-            SidxResult dataTableResult = operator.scan(sidxTable, sidxScan);
+            SidxResult dataTableResult = scan(sidxTable, sidxScan);
             Iterator<Result> iterator = dataTableResult.getIterator();
 
             List<SidxGet> list = new LinkedList<>();
@@ -309,7 +156,7 @@ public class SidxOperation {
                 .build();
 
             SidxTable indexTable = new SidxTable().of(indexTableName).build();
-            SidxResult indexTableResult = operator.scan(indexTable, sidxScan);
+            SidxResult indexTableResult = scan(indexTable, sidxScan);
             Iterator<Result> iterator = indexTableResult.getIterator();
 
             List<SidxGet> list = new LinkedList<>();
@@ -327,22 +174,23 @@ public class SidxOperation {
 
     /**
      * @param sidxTable
-     * @param sidxScan
-     * @return SidxResult
-     * @description: scan data from data table
+     * @param node
+     * @return boolean
+     * @description get data asynchronously
      */
-    public SidxResult scan(SidxTable sidxTable, SidxScan sidxScan) {
-        SidxResult result = operator.scan(sidxTable, sidxScan);
-        return result;
+    @Override
+    public SidxResult getAsync(SidxTable sidxTable, SidxCall node) {
+        return null;
     }
 
     /**
      * @param sidxTable
      * @param sidxDelete
      * @return boolean
-     * @description: delete data from index table and data table
+     * @description delete data synchronously
      */
-    public boolean delete(SidxTable sidxTable, SidxDelete sidxDelete) {
+    @Override
+    public boolean deleteSync(SidxTable sidxTable, SidxDelete sidxDelete) {
         SidxTableConfig tableConfig = achieveMeta(sidxTable);
 
         boolean delFlag = true;
@@ -365,8 +213,7 @@ public class SidxOperation {
         List<SidxTableConfig.TableColumn> tableColumns;
 
         if (columnFamily == null && qualifier == null) {
-            tableColumns = tableConfig.getTableColumns().stream().filter(t ->
-                t.isIndex()).collect(Collectors.toList()
+            tableColumns = tableConfig.getTableColumns().stream().filter(SidxTableConfig.TableColumn::isIndex).collect(Collectors.toList()
             );
         } else if (qualifier == null) {
             tableColumns = tableConfig.getTableColumns().stream().filter(t ->
@@ -386,20 +233,37 @@ public class SidxOperation {
             SidxTable indexTable = new SidxTable().of(indexTableName);
             SidxDelete delete = new SidxDelete().of(indexRowKey);
 
-            delFlag = delFlag & operator.delete(indexTable, delete);
+            delFlag = delFlag & delete(indexTable, delete);
         }
 
         // 删除数据表
-        delFlag &= operator.delete(sidxTable, sidxDelete);
+        delFlag &= delete(sidxTable, sidxDelete);
 
         return delFlag;
     }
 
-    public boolean update(SidxTable sidxTable, SidxUpdate dataUpdate) {
+    /**
+     * @param sidxTable
+     * @param sidxDelete
+     * @return boolean
+     * @description delete data asynchronously
+     */
+    @Override
+    public boolean deleteAsync(SidxTable sidxTable, SidxDelete sidxDelete) {
+        return false;
+    }
 
-        boolean flag = true;
 
-        SidxGet get = new SidxGet().of(dataUpdate.getUpdate().getRow());
+    /**
+     * @param sidxTable
+     * @param sidxUpdate
+     * @return boolean
+     * @description update data synchronously
+     */
+    @Override
+    public boolean updateSync(SidxTable sidxTable, SidxUpdate sidxUpdate) {
+
+        SidxGet get = new SidxGet().of(sidxUpdate.getUpdate().getRow());
         SidxResult getResult = get(sidxTable, get);
         if (getResult.getResult().isEmpty()) {
             return false;
@@ -409,22 +273,33 @@ public class SidxOperation {
         for (SidxTableConfig.TableColumn column : tableConfig.getTableColumns()) {
             byte[] family = Bytes.toBytes(column.getFamily());
             byte[] qualifier = Bytes.toBytes(column.getQualifier());
-            List<Cell> cells = dataUpdate.getUpdate().get(family, qualifier);
+            List<Cell> cells = sidxUpdate.getUpdate().get(family, qualifier);
             if (cells == null || cells.size() == 0) {
                 byte[] value = getResult.getResult().getValue(family, qualifier);
-                dataUpdate.addColumnFamily(family).addQualifier(qualifier).addValue(value).buildCell();
+                sidxUpdate.addColumnFamily(family).addQualifier(qualifier).addValue(value).buildCell();
             }
         }
 
-        dataUpdate.build();
+        sidxUpdate.build();
 
-        SidxDelete delete = new SidxDelete().of(dataUpdate.getUpdate().getRow());
-        flag = delete(sidxTable, delete);
+        SidxDelete delete = new SidxDelete().of(sidxUpdate.getUpdate().getRow());
+        boolean flag = delete(sidxTable, delete);
 
         if (flag) {
-            flag &= put(sidxTable, new SidxPut().copyOf(dataUpdate.getUpdate()));
+            flag &= put(sidxTable, new SidxPut().copyOf(sidxUpdate.getUpdate()));
         }
 
         return flag;
+    }
+
+    /**
+     * @param sidxTable
+     * @param sidxUpdate
+     * @return boolean
+     * @description update data asynchronously
+     */
+    @Override
+    public boolean updateAsync(SidxTable sidxTable, SidxUpdate sidxUpdate) {
+        return false;
     }
 }

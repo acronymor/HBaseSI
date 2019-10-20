@@ -1,5 +1,6 @@
 package com.hbase.demo;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -7,31 +8,26 @@ import java.io.IOException;
 
 /**
  * @author apktool
- * @title: com.hbase.demo.Demo
- * @description: TODO
+ * @title com.hbase.demo.Demo
+ * @description TODO
  * @date 2019-09-30 22:39
  */
 
 @Service
+@RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class Demo {
 
-    @Autowired
-    private CreateTableDemo createTableDemo;
+    private final CreateTableDemo createTableDemo;
 
-    @Autowired
-    private GetDemo getDemo;
+    private final GetDemo getDemo;
 
-    @Autowired
-    private PutDemo putDemo;
+    private final PutDemo putDemo;
 
-    @Autowired
-    private DeleteDemo deleteDemo;
+    private final DeleteDemo deleteDemo;
 
-    @Autowired
-    private UpdateDemo updateDemo;
+    private final UpdateDemo updateDemo;
 
-    @Autowired
-    private ScanDemo scanDemo;
+    private final ScanDemo scanDemo;
 
     /**
      * @param args

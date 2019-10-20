@@ -4,22 +4,23 @@ import com.hbase.demo.client.SidxOperation;
 import com.hbase.demo.client.SidxTable;
 import com.hbase.demo.client.SidxUpdate;
 import com.hbase.demo.configuration.SidxTableConfig;
+import lombok.Setter;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 /**
  * @author apktool
- * @title: com.hbase.demo.UpdateDemo
- * @description: TODO
+ * @title com.hbase.demo.UpdateDemo
+ * @description TODO
  * @date 2019-10-13 14:45
  */
 @Service
 public class UpdateDemo {
-    @Autowired
+    @Setter(onMethod = @__({@Autowired}))
     private SidxOperation sidxOperation;
 
-    @Autowired
+    @Setter(onMethod = @__({@Autowired}))
     private SidxTableConfig sidxTableConfig;
 
     public void start(String[] args) {
@@ -37,7 +38,7 @@ public class UpdateDemo {
             .buildCell()
             .build();
 
-        boolean flag = sidxOperation.update(table, data);
+        boolean flag = sidxOperation.updateSync(table, data);
         System.out.println(flag);
     }
 
@@ -50,7 +51,7 @@ public class UpdateDemo {
             .buildCell()
             .build();
 
-        boolean flag = sidxOperation.update(table, data);
+        boolean flag = sidxOperation.updateSync(table, data);
         System.out.println(flag);
     }
 

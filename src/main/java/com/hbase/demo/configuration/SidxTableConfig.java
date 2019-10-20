@@ -18,8 +18,8 @@ import java.util.List;
 
 /**
  * @author apktool
- * @title: com.hbase.demo.configuration.SidxTableStruct
- * @description: Build SidxTable config from struct.yml
+ * @title com.hbase.demo.configuration.SidxTableStruct
+ * @description Build SidxTable config from struct.yml
  * @date 2019-10-02 15:00
  */
 @PropertySources({
@@ -44,7 +44,7 @@ public class SidxTableConfig {
     /**
      * Qualifier Type
      *
-     * @description: These byte array are not equal for the same value from different type
+     * @description These byte array are not equal for the same value from different type
      */
     @AllArgsConstructor
     public enum QualifierType {

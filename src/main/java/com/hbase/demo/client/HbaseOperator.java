@@ -1,10 +1,10 @@
 package com.hbase.demo.client;
 
 import com.hbase.demo.utils.Utils;
+import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -16,15 +16,15 @@ import java.util.List;
 
 /**
  * @author apktool
- * @title: com.hbase.demo.client.SidxOperation
- * @description: Basic operation of Sidx Table
+ * @title com.hbase.demo.client.SidxOperation
+ * @description Basic operation of Sidx Table
  * @date 2019-10-01 20:48
  */
 @Component
+@Slf4j
 public class HbaseOperator {
-    private static final Logger logger = LoggerFactory.getLogger(HbaseOperator.class);
 
-    @Autowired
+    @Setter(onMethod = @__({@Autowired}))
     private SidxConnection sidxConnection;
 
     public boolean isTableExisted(SidxTable sidxTable) {
@@ -110,8 +110,7 @@ public class HbaseOperator {
         Connection conn = sidxConnection.getHbaseConnection();
 
         try (Table table = conn.getTable(sidxTable.getTableName())) {
-            SidxResult sidxResult = new SidxResult().of(table.get(sidxGet.getGet())).build();
-            return sidxResult;
+            return new SidxResult().of(table.get(sidxGet.getGet())).build();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -133,7 +132,7 @@ public class HbaseOperator {
 
                 @Override
                 public boolean hasNext() {
-                    return idx >= results.length ? false : true;
+                    return idx < results.length;
                 }
 
                 @Override

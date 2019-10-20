@@ -13,8 +13,8 @@ import org.apache.hadoop.hbase.util.Bytes;
 
 /**
  * @author apktool
- * @title: com.hbase.demo.client.SidxTable
- * @description: POJO
+ * @title com.hbase.demo.client.SidxTable
+ * @description POJO
  * @date 2019-10-01 21:44
  */
 @NoArgsConstructor
@@ -27,7 +27,6 @@ public class SidxTable {
     private TableDescriptor td;
 
     private ColumnFamilyDescriptorBuilder cdb;
-    private ColumnFamilyDescriptor cfd;
 
     public SidxTable of(String tableName) {
         this.tableName = TableName.valueOf(tableName);
@@ -56,6 +55,7 @@ public class SidxTable {
     }
 
     public SidxTable buildCF() {
+        ColumnFamilyDescriptor cfd;
         cfd = cdb.build();
         tdb.setColumnFamily(cfd);
         return this;

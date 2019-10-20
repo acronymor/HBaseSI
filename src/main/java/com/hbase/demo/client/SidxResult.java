@@ -12,8 +12,8 @@ import java.util.List;
 
 /**
  * @author apktool
- * @title: com.hbase.demo.client.SidxResult
- * @description: TODO
+ * @title com.hbase.demo.client.SidxResult
+ * @description TODO
  * @date 2019-10-03 10:08
  */
 @NoArgsConstructor
@@ -37,7 +37,7 @@ public class SidxResult {
     /**
      * @param append
      * @return SidxResult
-     * @description: Obtain union result between two SidxResults
+     * @description Obtain union result between two SidxResults
      */
     public SidxResult addAll(SidxResult append) {
         LinkedHashMap<String, Result> map = new LinkedHashMap<>();
@@ -59,7 +59,7 @@ public class SidxResult {
     /**
      * @param retain
      * @return SidxResult
-     * @description: Obtain intersection result between two SidxResults
+     * @description Obtain intersection result between two SidxResults
      */
     public SidxResult retainAll(SidxResult retain) {
         LinkedHashMap<String, Result> map = new LinkedHashMap<>();

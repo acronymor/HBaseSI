@@ -13,8 +13,8 @@ import java.util.List;
 
 /**
  * @author apktool
- * @title: com.hbase.demo.client.SidxScan
- * @description: TODO
+ * @title com.hbase.demo.client.SidxScan
+ * @description TODO
  * @date 2019-10-03 17:16
  */
 @NoArgsConstructor

@@ -4,6 +4,7 @@ import com.hbase.demo.client.SidxOperation;
 import com.hbase.demo.client.SidxResult;
 import com.hbase.demo.client.SidxTable;
 import com.hbase.demo.condition.*;
+import lombok.Setter;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.hbase.util.Pair;
@@ -14,14 +15,14 @@ import java.util.Iterator;
 
 /**
  * @author apktool
- * @title: com.hbase.demo.GetDemo
- * @description: TODO
+ * @title com.hbase.demo.GetDemo
+ * @description TODO
  * @date 2019-10-06 11:47
  */
 @Service
 public class GetDemo {
 
-    @Autowired
+    @Setter(onMethod = @__({@Autowired}))
     private SidxOperation sidxOperation;
 
     public void start(String[] args) {
@@ -46,7 +47,7 @@ public class GetDemo {
 
         SidxCall call = new SidxCall(operator, operators);
 
-        SidxResult sidxResult = sidxOperation.get(table, call);
+        SidxResult sidxResult = sidxOperation.getSync(table, call);
         Iterator<Result> iterator = sidxResult.getIterator();
         while (iterator.hasNext()) {
             Result result = iterator.next();
@@ -116,7 +117,7 @@ public class GetDemo {
                 AbstractSidxNode right = ((SidxCall) node).getOperators()[1];
 
                 if (!(left instanceof SidxCall) && !(right instanceof SidxCall)) {
-                    SidxResult result = sidxOperation.get(table, (SidxCall) node);
+                    SidxResult result = sidxOperation.getSync(table, (SidxCall) node);
                     if (pair.getSecond() == null) {
                         pair.setSecond(result);
                     } else {
@@ -166,11 +167,10 @@ public class GetDemo {
     }
 
     private void printSidxCall(SidxCall call) {
-        SidxCall node = call;
 
-        SidxIdentifier identifier = (SidxIdentifier) node.getOperators()[0];
-        SidxLiteral literal = (SidxLiteral) node.getOperators()[1];
-        SidxOperator.SidxKind kind = node.getOperator().getKind();
+        SidxIdentifier identifier = (SidxIdentifier) call.getOperators()[0];
+        SidxLiteral literal = (SidxLiteral) call.getOperators()[1];
+        SidxOperator.SidxKind kind = call.getOperator().getKind();
 
         String f1c1 = "f1:c1";
         String f2c1 = "f2:c1";

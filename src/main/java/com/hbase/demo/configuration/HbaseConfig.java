@@ -7,8 +7,8 @@ import org.springframework.context.annotation.PropertySources;
 
 /**
  * @author apktool
- * @title: com.hbase.demo.configuration.HbaseConfig
- * @description: Build HBase config from hbase.properties
+ * @title com.hbase.demo.configuration.HbaseConfig
+ * @description Build HBase config from hbase.properties
  * @date 2019-09-30 22:45
  */
 

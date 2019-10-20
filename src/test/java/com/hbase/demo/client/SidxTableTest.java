@@ -28,9 +28,6 @@ public class SidxTableTest {
             .buildCF()
             .build();
 
-        if (operator.isTableExisted(table)) {
-        }
-
         operator.createTable(table, 1);
     }
 

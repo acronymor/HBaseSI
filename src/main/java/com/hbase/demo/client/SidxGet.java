@@ -5,8 +5,8 @@ import org.apache.hadoop.hbase.client.Get;
 
 /**
  * @author apktool
- * @title: com.hbase.demo.client.SidxGet
- * @description: TODO
+ * @title com.hbase.demo.client.SidxGet
+ * @description TODO
  * @date 2019-10-03 09:51
  */
 public class SidxGet {

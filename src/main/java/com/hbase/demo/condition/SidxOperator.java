@@ -5,8 +5,8 @@ import lombok.Getter;
 
 /**
  * @author apktool
- * @title: com.hbase.demo.condition.SidxOperator
- * @description: TODO
+ * @title com.hbase.demo.condition.SidxOperator
+ * @description TODO
  * @date 2019-10-06 21:08
  */
 @Getter
@@ -35,6 +35,6 @@ public class SidxOperator {
         NO_OP,
 
         AND,
-        OR;
+        OR
     }
 }
